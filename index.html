@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Estoque</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 15px;
+            padding-bottom: 80px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        select, input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+        
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .selected-value {
+            display: inline-block;
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-manual {
+            background: #f59e0b;
+            color: white;
+            font-size: 14px;
+            padding: 10px;
+        }
+        
+        .btn-export {
+            background: #06b6d4;
+            color: white;
+        }
+        
+        .btn-export:hover {
+            background: #0891b2;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        #reader, #readerPN, #readerSN {
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .camera-section {
+            display: none;
+        }
+        
+        .camera-section.active {
+            display: block;
+        }
+        
+        .result-display {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .result-display strong {
+            color: #065f46;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+        
+        .result-display span {
+            color: #059669;
+            font-size: 16px;
+            font-weight: 600;
+            word-break: break-all;
+        }
+        
+        .manual-input {
+            display: none;
+            margin-top: 10px;
+        }
+        
+        .manual-input.show {
+            display: block;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            padding: 10px 6px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        td {
+            padding: 10px 6px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-action {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-edit {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background: #d97706;
+        }
+        
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #9ca3af;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h3 {
+            color: #333;
+            font-size: 20px;
+        }
+        
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+        
+        .stats {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .stats h3 {
+            color: #1e40af;
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+        
+        .stats p {
+            color: #3b82f6;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📦 Controle de Estoque</h1>
+        <p>Sistema de cadastro de produtos</p>
+    </div>
+
+    <!-- PASSO 1: Seleção de Prateleira -->
+    <div class="card">
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-title">Selecione a Prateleira</div>
+        </div>
+        <label for="prateleira">Prateleira:</label>
+        <select id="prateleira">
+            <option value="">-- Selecione --</option>
+            <option value="A1">A1</option>
+            <option value="A2">A2</option>
+            <option value="A3">A3</option>
+            <option value="A4">A4</option>
+            <option value="A5">A5</option>
+            <option value="B1">B1</option>
+            <option value="B2">B2</option>
+            <option value="B3">B3</option>
+            <option value="B4">B4</option>
+            <option value="B5">B5</option>
+            <option value="C1">C1</option>
+            <option value="C2">C2</option>
+            <option value="C3">C3</option>
+            <option value="C4">C4</option>
+            <option value="C5">C5</option>
+            <option value="D1">D1</option>
+            <option value="D2">D2</option>
+            <option value="D3">D3</option>
+            <option value="D4">D4</option>
+            <option value="D5">D5</option>
+            <option value="E1">E1</option>
+            <option value="E2">E2</option>
+            <option value="E3">E3</option>
+            <option value="E4">E4</option>
+            <option value="E5">E5</option>
+        </select>
+        <div id="prateleiraSelected"></div>
+    </div>
+
+    <!-- PASSO 2: Leitura do PARTNUMBER -->
+    <div class="card">
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-title">Part Number</div>
+        </div>
+        
+        <button id="btnCameraPN" class="btn btn-primary">📷 Ler Part Number</button>
+        
+        <div id="cameraSectionPN" class="camera-section">
+            <div id="readerPN"></div>
+            <button id="btnStopPN" class="btn btn-danger">⏹️ Parar Câmera</button>
+            <div class="status" id="statusPN">Aponte para o código de barras ou QR Code</div>
+        </div>
+        
+        <button id="btnManualPN" class="btn btn-manual">✏️ Digitar Manualmente</button>
+        
+        <div id="manualInputPN" class="manual-input">
+            <input type="text" id="inputPN" placeholder="Digite o Part Number">
+            <button id="btnSavePN" class="btn btn-secondary">✓ Confirmar</button>
+        </div>
+        
+        <div id="resultPN"></div>
+    </div>
+
+    <!-- PASSO 3: Descrição -->
+    <div class="card">
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-title">Descrição</div>
+        </div>
+        <label for="descricao">Descrição do Produto:</label>
+        <textarea id="descricao" rows="3" placeholder="Digite a descrição do produto"></textarea>
+    </div>
+
+    <!-- PASSO 4: Fabricante -->
+    <div class="card">
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-title">Fabricante</div>
+        </div>
+        <label for="fabricante">Fabricante:</label>
+        <select id="fabricante">
+            <option value="">-- Selecione --</option>
+            <option value="Infinera">Infinera</option>
+            <option value="Huawei">Huawei</option>
+            <option value="Padtec">Padtec</option>
+            <option value="Ciena">Ciena</option>
+            <option value="Nokia">Nokia</option>
+            <option value="Ericsson">Ericsson</option>
+            <option value="Cisco">Cisco</option>
+            <option value="Juniper">Juniper</option>
+        </select>
+        <div id="fabricanteSelected"></div>
+    </div>
+
+    <!-- PASSO 5: Botão Salvar Dados Iniciais -->
+    <div class="card">
+        <button id="btnSaveDados" class="btn btn-secondary">💾 Salvar Dados do Produto</button>
+    </div>
+
+    <!-- PASSO 6: Leitura do SERIAL (habilitado após salvar) -->
+    <div class="card hidden" id="cardSerial">
+        <div class="step">
+            <div class="step-number">5</div>
+            <div class="step-title">Serial Number</div>
+        </div>
+        
+        <button id="btnCameraSN" class="btn btn-primary">📷 Ler Serial Number</button>
+        
+        <div id="cameraSectionSN" class="camera-section">
+            <div id="readerSN"></div>
+            <button id="btnStopSN" class="btn btn-danger">⏹️ Parar Câmera</button>
+            <div class="status" id="statusSN">Aponte para o código de barras ou QR Code</div>
+        </div>
+        
+        <button id="btnManualSN" class="btn btn-manual">✏️ Digitar Manualmente</button>
+        
+        <div id="manualInputSN" class="manual-input">
+            <input type="text" id="inputSN" placeholder="Digite o Serial Number">
+            <button id="btnSaveSN" class="btn btn-secondary">✓ Confirmar</button>
+        </div>
+        
+        <div id="resultSN"></div>
+    </div>
+
+    <!-- PASSO 7: Botão Salvar na Lista -->
+    <div class="card hidden" id="cardSalvarLista">
+        <button id="btnSalvarLista" class="btn btn-secondary">✓ Adicionar à Lista de Estoque</button>
+    </div>
+
+    <!-- LISTA DE PRODUTOS -->
+    <div class="card">
+        <div class="step">
+            <div class="step-number">📋</div>
+            <div class="step-title">Lista de Produtos Cadastrados</div>
+        </div>
+        
+        <div class="stats">
+            <h3 id="totalProdutos">0</h3>
+            <p>Total de Produtos Cadastrados</p>
+        </div>
+        
+        <button id="btnExportar" class="btn btn-export">📥 Exportar para Excel (CSV)</button>
+        
+        <div class="table-container">
+            <table id="tabelaEstoque">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Prateleira</th>
+                        <th>Part Number</th>
+                        <th>Descrição</th>
+                        <th>Fabricante</th>
+                        <th>Serial</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaBody">
+                    <tr>
+                        <td colspan="7" class="empty-state">Nenhum produto cadastrado ainda</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO -->
+    <div id="modalEdit" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Editar Produto</h3>
+                <button class="btn-close" id="btnCloseModal">&times;</button>
+            </div>
+            
+            <input type="hidden" id="editId">
+            
+            <label for="editPrateleira">Prateleira:</label>
+            <select id="editPrateleira">
+                <option value="A1">A1</option>
+                <option value="A2">A2</option>
+                <option value="A3">A3</option>
+                <option value="A4">A4</option>
+                <option value="A5">A5</option>
+                <option value="B1">B1</option>
+                <option value="B2">B2</option>
+                <option value="B3">B3</option>
+                <option value="B4">B4</option>
+                <option value="B5">B5</option>
+                <option value="C1">C1</option>
+                <option value="C2">C2</option>
+                <option value="C3">C3</option>
+                <option value="C4">C4</option>
+                <option value="C5">C5</option>
+                <option value="D1">D1</option>
+                <option value="D2">D2</option>
+                <option value="D3">D3</option>
+                <option value="D4">D4</option>
+                <option value="D5">D5</option>
+                <option value="E1">E1</option>
+                <option value="E2">E2</option>
+                <option value="E3">E3</option>
+                <option value="E4">E4</option>
+                <option value="E5">E5</option>
+            </select>
+            
+            <label for="editPartNumber" style="margin-top: 15px;">Part Number:</label>
+            <input type="text" id="editPartNumber">
+            
+            <label for="editDescricao" style="margin-top: 15px;">Descrição:</label>
+            <textarea id="editDescricao" rows="3"></textarea>
+            
+            <label for="editFabricante" style="margin-top: 15px;">Fabricante:</label>
+            <select id="editFabricante">
+                <option value="Infinera">Infinera</option>
+                <option value="Huawei">Huawei</option>
+                <option value="Padtec">Padtec</option>
+                <option value="Ciena">Ciena</option>
+                <option value="Nokia">Nokia</option>
+                <option value="Ericsson">Ericsson</option>
+                <option value="Cisco">Cisco</option>
+                <option value="Juniper">Juniper</option>
+            </select>
+            
+            <label for="editSerial" style="margin-top: 15px;">Serial Number:</label>
+            <input type="text" id="editSerial">
+            
+            <div class="btn-group" style="margin-top: 20px;">
+                <button id="btnCancelEdit" class="btn btn-danger">Cancelar</button>
+                <button id="btnSaveEdit" class="btn btn-secondary">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado da aplicação
+        let state = {
+            prateleira: '',
+            partNumber: '',
+            descricao: '',
+            fabricante: '',
+            serial: '',
+            nextId: 1,
+            produtos: [],
+            editingId: null
+        };
+        
+        let scannerPN = null;
+        let scannerSN = null;
+        let isScanningPN = false;
+        let isScanningS N = false;
+
+        // Carregar dados do localStorage na inicialização
+        function carregarDados() {
+            const saved = localStorage.getItem('estoque_produtos');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    state.produtos = data.produtos || [];
+                    state.nextId = data.nextId || 1;
+                    atualizarTabela();
+                } catch (e) {
+                    console.error('Erro ao carregar dados:', e);
+                }
+            }
+        }
+
+        // Salvar dados no localStorage
+        function salvarDados() {
+            try {
+                localStorage.setItem('estoque_produtos', JSON.stringify({
+                    produtos: state.produtos,
+                    nextId: state.nextId
+                }));
+            } catch (e) {
+                console.error('Erro ao salvar dados:', e);
+                alert('Erro ao salvar dados. Verifique o espaço disponível.');
+            }
+        }
+
+        // Elementos DOM
+        const prateleiraSelect = document.getElementById('prateleira');
+        const prateleiraSelected = document.getElementById('prateleiraSelected');
+        const fabricanteSelect = document.getElementById('fabricante');
+        const fabricanteSelected = document.getElementById('fabricanteSelected');
+        const descricaoInput = document.getElementById('descricao');
+        
+        // PASSO 1: Seleção de Prateleira
+        prateleiraSelect.addEventListener('change', (e) => {
+            state.prateleira = e.target.value;
+            if (state.prateleira) {
+                prateleiraSelected.innerHTML = `<span class="selected-value">✓ Prateleira selecionada: ${state.prateleira}</span>`;
+            } else {
+                prateleiraSelected.innerHTML = '';
+            }
+        });
+
+        // PASSO 2: Part Number - Câmera
+        document.getElementById('btnCameraPN').addEventListener('click', startScanPN);
+        document.getElementById('btnStopPN').addEventListener('click', stopScanPN);
+        document.getElementById('btnManualPN').addEventListener('click', () => {
+            document.getElementById('manualInputPN').classList.add('show');
+        });
+        document.getElementById('btnSavePN').addEventListener('click', () => {
+            const value = document.getElementById('inputPN').value.trim();
+            if (value) {
+                state.partNumber = value;
+                showResult('resultPN', 'Part Number', value);
+                document.getElementById('manualInputPN').classList.remove('show');
+                document.getElementById('inputPN').value = '';
+            }
+        });
+
+        async function startScanPN() {
+            if (isScanningPN) return;
+            
+            try {
+                document.getElementById('cameraSectionPN').classList.add('active');
+                document.getElementById('statusPN').textContent = 'Iniciando câmera...';
+                document.getElementById('statusPN').style.color = '#f59e0b';
+                
+                scannerPN = new Html5Qrcode("readerPN");
+                
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                };
+                
+                await scannerPN.start(
+                    { facingMode: "environment" },
+                    config,
+                    (decodedText, decodedResult) => {
+                        state.partNumber = decodedText;
+                        showResult('resultPN', 'Part Number', decodedText);
+                        document.getElementById('statusPN').textContent = '✓ Código lido com sucesso!';
+                        document.getElementById('statusPN').style.color = '#10b981';
+                        
+                        // Toca um beep
+                        try {
+                            const beep = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZRQ0PVqzn77BdGAg+ltryxW8gBS1+zPLaizsIGGS56+ihUBELTKXh8bllHAU2jdXzzn0pBSh3xPDcjUUMEl206+2nVRQLRp7f8r5sIQU0hM/z1YU2Bhxqvu7mnEgODlSq5vCwYBkIPZPY88FsIAUrfs/y24k5CBdiu+rqoU0RCkuk4PG6aB4FNIvU8tB+KgUnd8Tw3Y5GDBJctOvsp1YVCkae4PK/bCEFM4TO89aGNgYcabzv5p5JDg1Tqubwr18ZCDyS1/PBayEFK37P8tuJOQgXYrvq6qJOEQpKpODxuWgeBS+K1PLPgC0FJnbE8N6OQwwSW7Tr7KlVFQlFnt/yvmwiBTKEzvPWhTYGHGm87+aeSQ4NUKzl8LBfFwo7kdfzwm0hBSt+z/LciDcIF2G76+ajThEKSKPg8blnHgUtidPyzn8uBCZ1xfDejUMLE1u06+ynVRUJRZ3e8r1sIQUyg870');
+                            beep.play();
+                        } catch(e) {}
+                        
+                        stopScanPN();
+                    },
+                    (errorMessage) => {
+                        // Ignora erros de frame
+                    }
+                );
+                
+                isScanningPN = true;
+                document.getElementById('statusPN').textContent = '📷 Aponte para o código';
+                document.getElementById('statusPN').style.color = '#10b981';
+                
+            } catch (err) {
+                console.error('Erro ao iniciar câmera PN:', err);
+                document.getElementById('statusPN').textContent = '❌ Erro: ' + err;
+                document.getElementById('statusPN').style.color = '#ef4444';
+                document.getElementById('cameraSectionPN').classList.remove('active');
+            }
+        }
+
+        async function stopScanPN() {
+            if (scannerPN && isScanningPN) {
+                try {
+                    await scannerPN.stop();
+                    scannerPN.clear();
+                } catch(e) {
+                    console.error('Erro ao parar scanner PN:', e);
+                }
+                isScanningPN = false;
+                document.getElementById('cameraSectionPN').classList.remove('active');
+            }
+        }
+
+        // PASSO 4: Fabricante
+        fabricanteSelect.addEventListener('change', (e) => {
+            state.fabricante = e.target.value;
+            if (state.fabricante) {
+                fabricanteSelected.innerHTML = `<span class="selected-value">✓ Fabricante selecionado: ${state.fabricante}</span>`;
+            } else {
+                fabricanteSelected.innerHTML = '';
+            }
+        });
+
+        // PASSO 5: Salvar dados iniciais
+        document.getElementById('btnSaveDados').addEventListener('click', () => {
+            if (!state.prateleira || !state.partNumber || !state.fabricante) {
+                alert('⚠️ Por favor, preencha Prateleira, Part Number e Fabricante antes de continuar.');
+                return;
+            }
+            
+            state.descricao = descricaoInput.value.trim();
+            
+            // Habilita card do Serial
+            document.getElementById('cardSerial').classList.remove('hidden');
+            alert('✅ Dados salvos! Agora leia o Serial Number.');
+            
+            // Scroll suave para a seção do serial
+            document.getElementById('cardSerial').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        // PASSO 6: Serial Number - Câmera
+        document.getElementById('btnCameraSN').addEventListener('click', startScanSN);
+        document.getElementById('btnStopSN').addEventListener('click', stopScanSN);
+        document.getElementById('btnManualSN').addEventListener('click', () => {
+            document.getElementById('manualInputSN').classList.add('show');
+        });
+        document.getElementById('btnSaveSN').addEventListener('click', () => {
+            const value = document.getElementById('inputSN').value.trim();
+            if (value) {
+                state.serial = value;
+                showResult('resultSN', 'Serial Number', value);
+                document.getElementById('manualInputSN').classList.remove('show');
+                document.getElementById('inputSN').value = '';
+                document.

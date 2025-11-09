@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitor de Códigos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        #reader {
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+        
+        .btn-start {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-start:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-stop {
+            background: #ef4444;
+            color: white;
+            display: none;
+        }
+        
+        .btn-stop:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+        }
+        
+        .result-card {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .result-card.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result-label {
+            font-size: 12px;
+            color: #059669;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        
+        .result-content {
+            font-size: 18px;
+            color: #065f46;
+            word-break: break-all;
+            font-weight: 500;
+        }
+        
+        .result-type {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #d1fae5;
+        }
+        
+        .status {
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        
+        .info {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .info p {
+            color: #1e40af;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Leitor de Códigos</h1>
+        
+        <div class="card">
+            <div id="reader"></div>
+            
+            <button id="startBtn" class="btn btn-start">
+                🎥 Iniciar Câmera
+            </button>
+            
+            <button id="stopBtn" class="btn btn-stop">
+                ⏹️ Parar Câmera
+            </button>
+            
+            <div class="status" id="status">
+                Clique no botão para começar
+            </div>
+        </div>
+        
+        <div class="result-card" id="resultCard">
+            <div class="result-label">Código Detectado</div>
+            <div class="result-content" id="resultText"></div>
+            <div class="result-type" id="resultType"></div>
+        </div>
+        
+        <div class="card info">
+            <p>
+                <strong>📋 Formatos suportados:</strong><br>
+                QR Code, EAN-13, EAN-8, Code 128, Code 39, UPC-A, UPC-E, ITF, Codabar e mais!
+            </p>
+            <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #bfdbfe;">
+                <strong>⚠️ Importante:</strong><br>
+                Para usar a câmera, você precisa abrir este aplicativo em HTTPS. Se não funcionar aqui, copie o código e salve como arquivo .html no seu computador ou hospede em um servidor.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let html5QrcodeScanner = null;
+        let isScanning = false;
+        
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const status = document.getElementById('status');
+        const resultCard = document.getElementById('resultCard');
+        const resultText = document.getElementById('resultText');
+        const resultType = document.getElementById('resultType');
+        
+        function onScanSuccess(decodedText, decodedResult) {
+            // Mostra o resultado
+            resultText.textContent = decodedText;
+            resultType.textContent = `Formato: ${decodedResult.result.format.formatName}`;
+            resultCard.classList.add('show');
+            
+            // Feedback sonoro (opcional)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZRQ0PVqzn77BdGAg+ltryxW8gBS1+zPLaizsIGGS56+ihUBELTKXh8bllHAU2jdXzzn0pBSh3xPDcjUUMEl206+2nVRQLRp7f8r5sIQU0hM/z1YU2Bhxqvu7mnEgODlSq5vCwYBkIPZPY88FsIAUrfs/y24k5CBdiu+rqoU0RCkuk4PG6aB4FNIvU8tB+KgUnd8Tw3Y5GDBJctOvsp1YVCkae4PK/bCEFM4TO89aGNgYcabzv5p5JDg1Tqubwr18ZCDyS1/PBayEFK37P8tuJOQgXYrvq6qJOEQpKpODxuWgeBS+K1PLPgC0FJnbE8N6OQwwSW7Tr7KlVFQlFnt/yvmwiBTKEzvPWhTYGHGm87+aeSQ4NT6zl8LBfFwo7kdfzwm0hBSt+z/LciDcIF2G76+ajThEKSKPg8blnHgUtidPyzn8uBCZ1xfDejUMLE1u06+ynVRUJRZ3e8r1sIQUyg870'); 
+                audio.play();
+            } catch(e) {}
+        }
+        
+        function onScanError(errorMessage) {
+            // Ignora erros comuns de scanning
+        }
+        
+        startBtn.addEventListener('click', async () => {
+            if (isScanning) return;
+            
+            // Verifica se está em contexto seguro
+            if (!window.isSecureContext) {
+                status.textContent = '⚠️ Câmera requer HTTPS. Copie o código e abra em um servidor local ou hospedagem HTTPS.';
+                status.style.color = '#ef4444';
+                return;
+            }
+            
+            status.textContent = '🔄 Solicitando permissão da câmera...';
+            status.style.color = '#f59e0b';
+            
+            try {
+                html5QrcodeScanner = new Html5Qrcode("reader");
+                
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                };
+                
+                await html5QrcodeScanner.start(
+                    { facingMode: "environment" },
+                    config,
+                    onScanSuccess,
+                    onScanError
+                );
+                
+                isScanning = true;
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+                status.textContent = '✅ Câmera ativa - Aponte para um código';
+                status.style.color = '#10b981';
+                
+            } catch (err) {
+                let errorMsg = 'Erro desconhecido';
+                
+                if (err.toString().includes('NotAllowedError')) {
+                    errorMsg = '❌ Permissão negada. Verifique as configurações do navegador e permita o acesso à câmera.';
+                } else if (err.toString().includes('NotFoundError')) {
+                    errorMsg = '❌ Nenhuma câmera encontrada no dispositivo.';
+                } else if (err.toString().includes('NotReadableError')) {
+                    errorMsg = '❌ Câmera já está em uso por outro aplicativo.';
+                } else if (err.toString().includes('OverconstrainedError')) {
+                    errorMsg = '❌ Câmera não suporta as configurações solicitadas.';
+                } else if (err.toString().includes('SecurityError')) {
+                    errorMsg = '⚠️ Erro de segurança. A câmera precisa de HTTPS para funcionar.';
+                } else {
+                    errorMsg = `❌ Erro: ${err}`;
+                }
+                
+                status.innerHTML = errorMsg;
+                status.style.color = '#ef4444';
+            }
+        });
+        
+        stopBtn.addEventListener('click', async () => {
+            if (!isScanning) return;
+            
+            try {
+                await html5QrcodeScanner.stop();
+                html5QrcodeScanner.clear();
+                
+                isScanning = false;
+                startBtn.style.display = 'block';
+                stopBtn.style.display = 'none';
+                status.textContent = 'Câmera desligada';
+                status.style.color = '#6b7280';
+                
+            } catch (err) {
+                status.textContent = `Erro ao parar: ${err}`;
+                status.style.color = '#ef4444';
+            }
+        });
+    </script>
+</body>
+</html>
